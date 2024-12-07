@@ -12,7 +12,7 @@ beforeEach(async () => {
   accounts = await web3.eth.getAccounts();
 
   const initialNumTickets = 10;
-  const ticketPrice = web3.utils.toWei('0.1', 'ether');
+  const ticketPrice = web3.utils.toWei('0.0001', 'ether');
 
   ticketSale = await new web3.eth.Contract(abi)
     .deploy({ data: bytecode, arguments: [initialNumTickets, ticketPrice] })
@@ -32,7 +32,7 @@ describe('TicketSale', () => {
   it('buys a ticket', async () => {
     await ticketSale.methods.buyTicket(1).send({
       from: accounts[1],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
       gas: '3000000',
     });
 
@@ -45,7 +45,7 @@ describe('TicketSale', () => {
   it('offers a swap', async () => {
     await ticketSale.methods.buyTicket(1).send({
       from: accounts[1],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
       gas: '3000000',
     });
 
@@ -59,12 +59,12 @@ describe('TicketSale', () => {
   it('accepts a swap', async () => {
     await ticketSale.methods.buyTicket(1).send({
       from: accounts[1],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
     });
 
     await ticketSale.methods.buyTicket(2).send({
       from: accounts[2],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
     });
 
     await ticketSale.methods.offerSwap(1).send({ from: accounts[1] });
@@ -93,7 +93,7 @@ describe('TicketSale', () => {
   it('resells a ticket', async () => {
     await ticketSale.methods.buyTicket(1).send({
       from: accounts[1],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
     });
 
     await ticketSale.methods
@@ -106,7 +106,7 @@ describe('TicketSale', () => {
   it('accepts resale', async () => {
     await ticketSale.methods.buyTicket(1).send({
       from: accounts[1],
-      value: web3.utils.toWei('0.1', 'ether'),
+      value: web3.utils.toWei('0.0001', 'ether'),
     });
 
     await ticketSale.methods
