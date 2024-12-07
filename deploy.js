@@ -24,7 +24,7 @@ const Web3 = require('web3');
 const { abi, bytecode } = require('./compile');
 
 const provider = new HDWalletProvider(
-  'shoe spice upon reform cram trim paper frown pair divert record favorite',
+  'secret phase',
   // remember to change this to your own phrase!
   'https://sepolia.infura.io/v3/384df1c112ba4dbcb64622b6d85f4919'
   // remember to change this to your own endpoint!
