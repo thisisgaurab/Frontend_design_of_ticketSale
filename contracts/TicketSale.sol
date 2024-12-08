@@ -24,6 +24,7 @@ contract TicketSale {
         _;
     }
 
+    // Buy ticket function
     function buyTicket(uint ticketId) public payable {
         require(ticketId > 0 && ticketId <= numTickets, "Invalid ticket ID.");
         require(msg.value == ticketPrice, "Incorrect amount sent.");
@@ -34,10 +35,12 @@ contract TicketSale {
         ticketsOwnedBy[msg.sender] = ticketId;
     }
 
+    // Get ticket of a person
     function getTicketOf(address person) public view returns (uint) {
         return ticketsOwnedBy[person];
     }
 
+    // Offer a ticket for swap
     function offerSwap(uint ticketId) public {
         require(
             ticketOwners[ticketId] == msg.sender,
@@ -46,6 +49,7 @@ contract TicketSale {
         swapOffers[ticketId] = msg.sender;
     }
 
+    // Accept a swap offer
     function acceptSwap(uint ticketId) public {
         address offerOwner = swapOffers[ticketId];
         require(offerOwner != address(0), "No swap offer for this ticket.");
@@ -60,9 +64,6 @@ contract TicketSale {
 
         uint otherTicketId = ticketsOwnedBy[msg.sender];
 
-        // Debugging logs for state before swap (for Remix or compatible IDEs)
-        emit SwapDebug(offerOwner, msg.sender, ticketId, otherTicketId);
-
         // Swap ticket ownership
         ticketOwners[ticketId] = msg.sender;
         ticketOwners[otherTicketId] = offerOwner;
@@ -71,14 +72,6 @@ contract TicketSale {
 
         // Clear the swap offer
         delete swapOffers[ticketId];
-
-        // Debugging logs for state after swap
-        emit SwapDebug(
-            ticketOwners[ticketId],
-            ticketOwners[otherTicketId],
-            ticketsOwnedBy[msg.sender],
-            ticketsOwnedBy[offerOwner]
-        );
     }
 
     // Event for debugging swap details
@@ -89,12 +82,14 @@ contract TicketSale {
         uint otherTicketId
     );
 
+    // Resell a ticket
     function resaleTicket(uint price) public {
         uint ticketId = ticketsOwnedBy[msg.sender];
         require(ticketId > 0, "You don't own a ticket.");
         resalePrices[ticketId] = price;
     }
 
+    // Accept resale
     function acceptResale(uint ticketId) public payable {
         uint resalePrice = resalePrices[ticketId];
         require(resalePrice > 0, "Ticket not for resale.");
@@ -114,6 +109,7 @@ contract TicketSale {
         delete ticketsOwnedBy[previousOwner];
     }
 
+    // Check tickets for resale
     function checkResale() public view returns (uint[] memory) {
         uint resaleCount = 0;
         for (uint i = 1; i <= numTickets; i++) {

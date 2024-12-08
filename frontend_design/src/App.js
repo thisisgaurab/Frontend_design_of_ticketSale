@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Web3 from 'web3';
+import { TicketSale_ABI, TicketSale_address } from './TicketSale';
 import './App.css';
 
 function App() {
@@ -19,79 +20,97 @@ function App() {
         .request({ method: 'eth_requestAccounts' })
         .then((accounts) => {
           setAccount(accounts[0]);
+          // Initialize contract
+          const ticketSaleContract = new web3.eth.Contract(
+            TicketSale_ABI, // Contract ABI from TicketSale.js
+            TicketSale_address // Contract address from TicketSale.js
+          );
+          setContract(ticketSaleContract);
         })
         .catch((error) => {
           console.error(error);
           setNotification('Error connecting to MetaMask.');
         });
-
-      // Get contract ABI and address from compiled contract
-      const contractABI = [
-        // Add your contract ABI here (unchanged from your code)
-      ];
-      const contractAddress = '0x806c6a130BD1B47a0Cd82366b532B6C1eD38Fa55'; // Replace with actual address
-
-      // Initialize contract
-      const ticketSaleContract = new web3.eth.Contract(
-        contractABI,
-        contractAddress
-      );
-      setContract(ticketSaleContract);
     } else {
       setNotification('Please install MetaMask to interact with the contract.');
     }
   }, []);
 
-  // Function to handle purchasing a ticket
-  const handlePurchaseTicket = async (id) => {
-    if (contract && account) {
+  const [loading, setLoading] = useState(false);
+
+  const handlePurchaseTicket = async () => {
+    if (contract && account && ticketId) {
       try {
-        // Assuming the purchase function is called purchaseTicket in the contract
-        await contract.methods.buyTicket(id).send({ from: account });
-        setNotification(`Ticket ${id} purchased successfully!`);
+        // Validate ticketId
+        if (isNaN(ticketId) || ticketId <= 0) {
+          setNotification('Invalid Ticket ID');
+          return;
+        }
+
+        // Estimate gas for the transaction
+        const gasEstimate = await contract.methods
+          .buyTicket(ticketId)
+          .estimateGas({ from: account });
+
+        // Send the transaction with gas estimation and added buffer
+        await contract.methods.buyTicket(ticketId).send({
+          from: account,
+          gas: gasEstimate + 10000, // Adding buffer to the gas estimate
+        });
+
+        // Success message
+        setNotification(`Ticket ${ticketId} purchased successfully!`);
       } catch (error) {
         setNotification('Error purchasing ticket: ' + error.message);
       }
+      setLoading(false);
+    } else {
+      setNotification('Please connect wallet and provide a valid Ticket ID.');
     }
   };
-
   // Function to handle offer swap
-  const handleOfferSwap = async (id) => {
-    if (contract && account) {
+  const handleOfferSwap = async () => {
+    if (contract && account && ticketId) {
       try {
-        // Assuming offerSwap function in contract
-        await contract.methods.offerSwap(id).send({ from: account });
-        setNotification(`Offer to swap ticket ${id} is pending.`);
+        // Call the offerSwap method on the contract
+        await contract.methods.offerSwap(ticketId).send({ from: account });
+        setNotification(`Offer to swap ticket ${ticketId} is pending.`);
       } catch (error) {
         setNotification('Error making offer swap: ' + error.message);
       }
+    } else {
+      setNotification('Please connect wallet and provide a valid Ticket ID.');
     }
   };
 
   // Function to handle accepting an offer
-  const handleAcceptOffer = async (id) => {
-    if (contract && account) {
+  const handleAcceptOffer = async () => {
+    if (contract && account && ticketId) {
       try {
-        // Assuming acceptOffer function in contract
-        await contract.methods.acceptSwap(id).send({ from: account });
-        setNotification(`Swap offer for ticket ${id} has been accepted.`);
+        // Call the acceptSwap method on the contract
+        await contract.methods.acceptSwap(ticketId).send({ from: account });
+        setNotification(`Swap offer for ticket ${ticketId} has been accepted.`);
       } catch (error) {
         setNotification('Error accepting offer: ' + error.message);
       }
+    } else {
+      setNotification('Please connect wallet and provide a valid Ticket ID.');
     }
   };
 
   // Function to retrieve ticket number using wallet address
-  const handleGetTicketNumber = async (address) => {
-    if (contract) {
+  const handleGetTicketNumber = async () => {
+    if (contract && walletAddress) {
       try {
-        // Assuming getTicketNumber function in contract
-        const ticketId = await contract.methods.getTicketOf(address).call();
-        setTicketId(ticketId);
-        setNotification(`Your ticket ID is: ${ticketId}`);
+        // Call the getTicketOf method on the contract
+        const ticket = await contract.methods.getTicketOf(walletAddress).call();
+        setTicketId(ticket);
+        setNotification(`Your ticket ID is: ${ticket}`);
       } catch (error) {
         setNotification('Error fetching ticket ID: ' + error.message);
       }
+    } else {
+      setNotification('Please provide a valid wallet address.');
     }
   };
 
@@ -99,7 +118,7 @@ function App() {
   const handleReturnTicket = async () => {
     if (ticketId && contract && account) {
       try {
-        // Assuming returnTicket function in contract
+        // Call the returnTicket method on the contract
         await contract.methods.returnTicket(ticketId).send({ from: account });
         const serviceFee = 5; // Example fee
         const refundAmount = 100 - serviceFee; // Example refund calculation
@@ -122,9 +141,7 @@ function App() {
             placeholder="Enter Ticket ID"
             onChange={(e) => setTicketId(e.target.value)}
           />
-          <button onClick={() => handlePurchaseTicket(ticketId)}>
-            Purchase
-          </button>
+          <button onClick={handlePurchaseTicket}>Purchase</button>
         </div>
 
         <div className="box">
@@ -134,7 +151,7 @@ function App() {
             placeholder="Enter Ticket ID to Swap"
             onChange={(e) => setTicketId(e.target.value)}
           />
-          <button onClick={() => handleOfferSwap(ticketId)}>Offer Swap</button>
+          <button onClick={handleOfferSwap}>Offer Swap</button>
         </div>
 
         <div className="box">
@@ -144,9 +161,7 @@ function App() {
             placeholder="Enter Ticket ID or Address"
             onChange={(e) => setTicketId(e.target.value)}
           />
-          <button onClick={() => handleAcceptOffer(ticketId)}>
-            Accept Offer
-          </button>
+          <button onClick={handleAcceptOffer}>Accept Offer</button>
         </div>
 
         <div className="box">
@@ -156,9 +171,7 @@ function App() {
             placeholder="Enter Wallet Address"
             onChange={(e) => setWalletAddress(e.target.value)}
           />
-          <button onClick={() => handleGetTicketNumber(walletAddress)}>
-            Get Ticket
-          </button>
+          <button onClick={handleGetTicketNumber}>Get Ticket</button>
         </div>
 
         <div className="box">
